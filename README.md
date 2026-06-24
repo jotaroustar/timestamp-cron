@@ -1,7 +1,5 @@
 # ⏱ 时间戳/Cron工具
 
-© 2026 jotarou.com. All rights reserved. Unauthorized copying or commercial use is prohibited.
-
 ## 简介
 
 零AI、纯本地运行的时间戳转换与 Cron 表达式工具，面向开发者/运维场景中"语法记不住、每次都要查"的高频需求。所有计算均在浏览器内完成，不上传任何数据，无需 API Key。
@@ -43,3 +41,5 @@
 - Cron 解析引擎：36 个单元测试，覆盖 OR 逻辑陷阱、步长语法、月末边界、非法输入校验等场景
 - 时区感知计算：12 个单元测试，验证同一表达式在不同时区下产生不同绝对时刻且能正确还原
 - 端到端测试（Playwright）：覆盖 Tab 切换、输入解析、表单互斥、跨 Tab 跳转、深色模式等完整交互链路，全程无 JS 报错
+
+© 2026 jotarou.com. All rights reserved. Unauthorized copying or commercial use is prohibited.
