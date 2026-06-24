@@ -1,0 +1,1004 @@
+<!-- Copyright © 2026 jotarou.com. All rights reserved. Unauthorized copying or commercial use is prohibited. -->
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>时间戳/Cron工具 | jotarou.com</title>
+<style>
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f0e8;--bg-card:#ede7dc;--bg-in:#faf7f3;
+  --tx:#2c1f0e;--tx-m:#7a6a54;--tx-l:#b8a89a;
+  --ac:#d4622a;--ac-h:#b8511f;--ac-bg:rgba(212,98,42,.12);
+  --bd:#d4c5ae;--bd-l:#e8dece;
+  --ok:#4a7c59;--ok-bg:rgba(74,124,89,.1);
+  --warn:#d97706;--warn-bg:rgba(217,119,6,.1);
+  --err:#c0392b;--err-bg:rgba(192,57,43,.1);
+  --r:10px;--rs:6px;
+}
+[data-theme=dark]{
+  --bg:#1a1209;--bg-card:#241a0d;--bg-in:#201508;
+  --tx:#e8dece;--tx-m:#a89070;--tx-l:#786050;
+  --ac:#e07040;--ac-h:#c85e30;--ac-bg:rgba(224,112,64,.15);
+  --bd:#3d2e18;--bd-l:#2e2010;
+  --ok:#5a9c70;--ok-bg:rgba(90,156,112,.15);
+  --warn:#f59e0b;--warn-bg:rgba(245,158,11,.12);
+  --err:#e05040;--err-bg:rgba(224,80,64,.12);
+}
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;font-size:15px;line-height:1.65;min-height:100vh}
+a{color:var(--ac);text-decoration:none}
+code,.mono{font-family:'SF Mono',Consolas,Monaco,'Courier New',monospace}
+
+/* Header */
+.hdr{background:var(--bg-card);border-bottom:1px solid var(--bd);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.hdr-l{display:flex;align-items:center;gap:12px}
+.h-back{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:var(--rs);background:var(--bg);color:var(--tx-m);border:1px solid var(--bd);font-size:17px;transition:.15s}
+.h-back:hover{background:var(--ac-bg);color:var(--ac);border-color:var(--ac)}
+.hdr-title{font-size:15px;font-weight:700}
+.hdr-sub{font-size:11px;color:var(--tx-m);margin-top:1px}
+.hdr-r{display:flex;gap:8px}
+.icon-btn{width:32px;height:32px;border-radius:var(--rs);background:var(--bg);border:1px solid var(--bd);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:.15s;color:var(--tx-m)}
+.icon-btn:hover{background:var(--ac-bg);border-color:var(--ac)}
+
+/* Layout */
+.main{max-width:1280px;margin:0 auto;padding:22px 18px 60px}
+
+/* Tabs */
+.tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--bd)}
+.tab-btn{padding:10px 18px;font-size:14px;font-weight:600;color:var(--tx-m);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;transition:.15s}
+.tab-btn.active{color:var(--ac);border-bottom-color:var(--ac)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* Card */
+.card{background:var(--bg-card);border:1px solid var(--bd);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.card-title .opt{color:var(--tx-m);font-size:11px;font-weight:400}
+
+/* Form */
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:12px;color:var(--tx-m);margin-bottom:5px}
+.fg input,.fg textarea,.fg select{width:100%;background:var(--bg-in);border:1px solid var(--bd);border-radius:var(--rs);padding:9px 11px;font-size:14px;color:var(--tx);font-family:inherit;outline:none;transition:.15s}
+.fg input:focus,.fg textarea:focus,.fg select:focus{border-color:var(--ac)}
+.fg input.mono{font-family:'SF Mono',Consolas,Monaco,monospace}
+.fg select:disabled,.fg input:disabled{opacity:.45;cursor:not-allowed;background:var(--bd-l)}
+
+/* Buttons */
+.btn-pri{background:var(--ac);color:#fff;border:none;border-radius:var(--rs);padding:10px 18px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn-pri:hover{background:var(--ac-h)}
+.btn-copy{background:var(--bg-in);color:var(--tx-m);border:1px solid var(--bd);border-radius:var(--rs);padding:8px 14px;font-size:12.5px;cursor:pointer;transition:.15s}
+.btn-copy:hover{border-color:var(--ac);color:var(--ac)}
+.btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+
+/* Timestamp panel */
+.ts-now-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.ts-now-big{font-family:'SF Mono',Consolas,Monaco,monospace;font-size:22px;font-weight:700;color:var(--ac);font-variant-numeric:tabular-nums}
+.ts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.ts-grid{grid-template-columns:1fr}}
+.unit-row{display:flex;gap:8px;margin-bottom:10px}
+.unit-btn{padding:5px 12px;border-radius:var(--rs);background:var(--bg-in);border:1px solid var(--bd);font-size:12px;cursor:pointer;color:var(--tx-m);transition:.15s}
+.unit-btn.active{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+
+/* Timezone table */
+.tz-table{width:100%;border-collapse:collapse;font-size:13px}
+.tz-table th,.tz-table td{padding:8px 10px;border-bottom:1px solid var(--bd-l);text-align:left}
+.tz-table th{color:var(--tx-m);font-weight:600;font-size:11.5px}
+.tz-table td.mono{font-family:'SF Mono',Consolas,Monaco,monospace;font-variant-numeric:tabular-nums}
+.tz-table tr:last-child td{border-bottom:none}
+
+/* Code snippet tabs */
+.snippet-langs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.snippet-lang-btn{padding:5px 11px;border-radius:var(--rs);background:var(--bg-in);border:1px solid var(--bd);font-size:12px;cursor:pointer;color:var(--tx-m);transition:.15s}
+.snippet-lang-btn.active{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+.code-box{background:#1e1812;border-radius:var(--rs);padding:14px;font-family:monospace;font-size:13px;color:#e8dece;white-space:pre-wrap;word-break:break-all;line-height:1.7;position:relative}
+.code-box .kw{color:#e07040}
+.code-box .str{color:#8fb88f}
+.code-box .nm{color:#7ab8d4}
+[data-theme=dark] .code-box{background:#0f0a05}
+[data-theme=light] .code-box{background:#ebe4d7;color:#3a2c18;border:1px solid var(--bd)}
+[data-theme=light] .code-box .kw{color:#b8511f}
+[data-theme=light] .code-box .str{color:#4a7c59}
+[data-theme=light] .code-box .nm{color:#2a6f8f}
+
+/* Cron workspace two-column */
+.workspace{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:880px){.workspace{grid-template-columns:1fr}}
+
+.cron-input-row{display:flex;gap:8px;margin-bottom:10px}
+.cron-input-row input{flex:1}
+.cron-fields{display:flex;gap:6px;margin-top:8px}
+.cron-field{flex:1;text-align:center}
+.cron-field .v{font-family:monospace;font-size:15px;font-weight:700;color:var(--ac);background:var(--bg-in);border:1px solid var(--bd);border-radius:var(--rs);padding:6px 0}
+.cron-field .lb{font-size:10.5px;color:var(--tx-m);margin-top:3px}
+.dialect-hint{font-size:11.5px;color:var(--tx-m);background:var(--bg-in);border-radius:var(--rs);padding:8px 10px;margin-top:10px;line-height:1.5;font-variant-numeric:tabular-nums}
+.err-hint{font-size:12.5px;color:var(--err);background:var(--err-bg);border-radius:var(--rs);padding:9px 11px;margin-top:8px;line-height:1.5}
+
+/* Builder form */
+.builder-row{display:flex;gap:8px;margin-bottom:10px;align-items:flex-end;flex-wrap:wrap}
+.builder-grp{flex:1;min-width:110px}
+.builder-grp label{display:block;font-size:11px;color:var(--tx-m);margin-bottom:4px}
+.freq-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.freq-btn{padding:6px 13px;border-radius:999px;background:var(--bg-in);border:1px solid var(--bd);font-size:12.5px;cursor:pointer;color:var(--tx-m);transition:.15s}
+.freq-btn.active{background:var(--ac-bg);border-color:var(--ac);color:var(--ac);font-weight:600}
+
+/* Human readable result */
+.human-desc{font-size:15px;font-weight:600;color:var(--tx);padding:12px 14px;background:var(--ac-bg);border-radius:var(--rs);margin-bottom:12px;line-height:1.6;font-variant-numeric:tabular-nums}
+.or-note{font-size:11.5px;color:var(--warn);background:var(--warn-bg);border-radius:var(--rs);padding:8px 10px;margin-bottom:12px;line-height:1.5}
+
+/* Next runs list */
+.run-item{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--bg-in);border:1px solid var(--bd-l);border-radius:var(--rs);margin-bottom:6px;font-size:13px;cursor:pointer;transition:.15s}
+.run-item:hover{border-color:var(--ac)}
+.run-item .idx{color:var(--tx-l);font-size:11px;width:18px}
+.run-item .dt{font-family:monospace;font-variant-numeric:tabular-nums;flex:1}
+.run-item .rel{color:var(--tx-m);font-size:11.5px}
+
+.empty-hint{color:var(--tx-l);font-size:13px;text-align:center;padding:30px 10px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;margin-bottom:10px}
+.panel-head .count{font-size:11px;color:var(--tx-m);font-weight:400}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--tx);color:var(--bg);padding:10px 20px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+footer{text-align:center;padding:18px 14px 26px;font-size:12px;color:var(--tx-m);line-height:1.7}
+.badge-free{display:inline-block;font-size:10.5px;background:var(--ok-bg);color:var(--ok);padding:2px 8px;border-radius:999px;font-weight:600;margin-left:6px}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <a href="/tools/" class="h-back" title="工具列表">&#x229E;</a>
+    <div>
+      <div class="hdr-title">⏱ 时间戳/Cron工具<span class="badge-free">零AI · 纯本地</span></div>
+      <div class="hdr-sub">时间戳互转 · 多时区对照 · Cron解析与下次执行预测</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="切换主题">🌙</button>
+  </div>
+</header>
+
+<main class="main">
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="ts" onclick="switchTab('ts')">时间戳互转</button>
+    <button class="tab-btn" data-tab="cron" onclick="switchTab('cron')">Cron工作台</button>
+  </div>
+
+  <div class="tab-panel active" id="panel-ts">
+
+    <div class="card">
+      <div class="card-title">当前时间<span class="opt">每秒自动刷新</span></div>
+      <div class="ts-now-row">
+        <div class="ts-now-big" id="nowTs">-</div>
+        <button class="btn-copy" onclick="copyNowTs()">复制</button>
+        <button class="btn-pri" onclick="fillNow()">填入下方转换框</button>
+      </div>
+      <div class="dialect-hint" id="nowReadable">-</div>
+    </div>
+
+    <div class="ts-grid">
+      <div class="card">
+        <div class="card-title">时间戳 → 日期</div>
+        <div class="unit-row">
+          <button class="unit-btn active" id="unitSec" onclick="setUnit('s')">秒（10位）</button>
+          <button class="unit-btn" id="unitMs" onclick="setUnit('ms')">毫秒（13位）</button>
+          <span style="font-size:11px;color:var(--tx-l);align-self:center">自动识别，可手动切换</span>
+        </div>
+        <div class="fg">
+          <input type="text" id="tsInput" class="mono" placeholder="输入时间戳，例如 1771200000" inputmode="numeric">
+        </div>
+        <div id="tsToDateResult"><div class="empty-hint">输入时间戳查看转换结果</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">日期 → 时间戳</div>
+        <div class="fg">
+          <label>本地日期时间</label>
+          <input type="datetime-local" id="dateInput" step="1">
+        </div>
+        <div id="dateToTsResult"><div class="empty-hint">选择日期时间查看对应时间戳</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">多时区对照</div>
+      <div id="tzTable"><div class="empty-hint">在上方输入时间戳或日期后，此处显示多时区对照</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">代码片段<span class="opt">点击复制，已自动填入当前时间戳</span></div>
+      <div class="snippet-langs" id="snippetLangs"></div>
+      <div class="code-box" id="snippetBox"></div>
+      <div class="btn-row"><button class="btn-copy" onclick="copySnippet()">复制代码</button></div>
+    </div>
+
+  </div>
+
+  <div class="tab-panel" id="panel-cron">
+
+    <div class="workspace">
+
+      <div>
+        <div class="card">
+          <div class="card-title">运行时区<span class="opt">Cron表达式的时间将按此时区解释</span></div>
+          <div class="fg">
+            <select id="cronTz"></select>
+          </div>
+          <div class="dialect-hint" id="tzAutoHint"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Cron 表达式</div>
+          <div class="cron-input-row">
+            <input type="text" id="cronInput" class="mono" placeholder="例如 0 2 * * 1-5" value="0 2 * * 1-5">
+          </div>
+          <div class="cron-fields" id="cronFieldsDisplay"></div>
+          <div class="dialect-hint">标准 5 位格式：分 时 日 月 周。本工具按 Linux crontab 规范解析，不支持秒级（Quartz 6 位）写法。</div>
+          <div id="cronErrHint"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">引导式生成<span class="opt">不依赖AI，纯表单</span></div>
+          <div class="freq-row" id="freqRow"></div>
+          <div id="builderFields"></div>
+          <button class="btn-pri" onclick="applyBuilder()" style="margin-top:6px">生成到上方表达式</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card-title">语义解析</div>
+          <div id="humanDescBox"><div class="empty-hint">输入合法的 Cron 表达式后自动解析</div></div>
+        </div>
+
+        <div class="card">
+          <div class="panel-head">
+            <span>未来执行时间</span>
+            <span class="count">
+              显示
+              <select id="nextN" onchange="renderNextRuns()" style="display:inline;width:auto;padding:2px 6px;font-size:12px">
+                <option value="5" selected>5</option>
+                <option value="10">10</option>
+                <option value="20">20</option>
+              </select>
+              次
+            </span>
+          </div>
+          <div id="nextRunsBox"><div class="empty-hint">解析成功后显示未来执行时间预测</div></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  <div>本工具完全本地运行，所有计算均在浏览器内完成，不上传任何数据，无需 API Key</div>
+  <div><a href="/tools/">工具列表</a> · <a href="https://jotarou.com" target="_blank">jotarou.com</a> · © 2026 jotarou.com</div>
+  <div style="margin-top:4px;font-size:11px">Cron 解析遵循标准 Linux crontab 规范；多时区显示基于浏览器 Intl API 与系统时区数据库，长期未来日期的时区/夏令时规则如有变更请自行复核</div>
+</footer>
+
+<script>
+
+// ======= Escape =======
+function esc(s){
+  if(s==null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+}
+
+// ======= Theme =======
+function initTheme(){
+  const t = localStorage.getItem('tscron-theme') || 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeBtn').textContent = t==='dark' ? '☀️' : '🌙';
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const nxt = cur==='dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', nxt);
+  localStorage.setItem('tscron-theme', nxt);
+  document.getElementById('themeBtn').textContent = nxt==='dark' ? '☀️' : '🌙';
+}
+
+// ======= Toast =======
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function debounce(fn, ms){
+  let t;
+  return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), ms); };
+}
+
+// ======= Tabs =======
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.getElementById('panel-ts').classList.toggle('active', name==='ts');
+  document.getElementById('panel-cron').classList.toggle('active', name==='cron');
+}
+
+// ===================================================================
+// ======= Tab 1: 时间戳互转 =======
+// ===================================================================
+
+const TIMEZONES = [
+  {label:'UTC', tz:'UTC'},
+  {label:'北京/上海 (UTC+8)', tz:'Asia/Shanghai'},
+  {label:'东京 (UTC+9)', tz:'Asia/Tokyo'},
+  {label:'洛杉矶 (美西)', tz:'America/Los_Angeles'},
+  {label:'纽约 (美东)', tz:'America/New_York'},
+  {label:'伦敦', tz:'Europe/London'},
+];
+
+let curUnit = 's'; // 's' | 'ms'
+
+function setUnit(u){
+  curUnit = u;
+  document.getElementById('unitSec').classList.toggle('active', u==='s');
+  document.getElementById('unitMs').classList.toggle('active', u==='ms');
+  handleTsInput();
+}
+
+// 纯数字过滤：边界防御，防止非法字符导致长度判断畸变
+function sanitizeDigits(raw){
+  return raw.replace(/[^0-9]/g, '');
+}
+
+// 自动判断秒/毫秒：10位=秒，13位=毫秒；其余长度按当前手动选择的单位处理
+function autoDetectUnit(digits){
+  if(digits.length === 10) return 's';
+  if(digits.length === 13) return 'ms';
+  return null; // 无法自动判断，使用当前手动单位
+}
+
+function tsInputToMs(raw){
+  const digits = sanitizeDigits(raw);
+  if(digits.length === 0) return null;
+  const detected = autoDetectUnit(digits);
+  const unit = detected || curUnit;
+  // 若是自动检测到的单位，同步一下按钮高亮（但不强制覆盖用户手动选择，只在能明确判断时同步）
+  if(detected){
+    document.getElementById('unitSec').classList.toggle('active', detected==='s');
+    document.getElementById('unitMs').classList.toggle('active', detected==='ms');
+  }
+  const num = Number(digits);
+  if(!Number.isFinite(num)) return null;
+  return unit === 's' ? num * 1000 : num;
+}
+
+function fmtInTz(ms, tz){
+  try{
+    const d = new Date(ms);
+    const parts = new Intl.DateTimeFormat('zh-CN', {
+      timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false,
+      weekday:'short'
+    }).formatToParts(d);
+    const get = t => parts.find(p=>p.type===t)?.value || '';
+    return `${get('year')}-${get('month')}-${get('day')} ${get('hour')}:${get('minute')}:${get('second')} (${get('weekday')})`;
+  }catch(e){
+    return '时区数据不可用';
+  }
+}
+
+function renderTzTable(ms){
+  const box = document.getElementById('tzTable');
+  if(ms == null){ box.innerHTML = '<div class="empty-hint">在上方输入时间戳或日期后，此处显示多时区对照</div>'; return; }
+  let rows = TIMEZONES.map(t => `<tr><td>${esc(t.label)}</td><td class="mono">${esc(fmtInTz(ms, t.tz))}</td></tr>`).join('');
+  box.innerHTML = `<table class="tz-table"><thead><tr><th>时区</th><th>对应时间</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function handleTsInput(){
+  const raw = document.getElementById('tsInput').value;
+  const cleaned = sanitizeDigits(raw);
+  if(cleaned !== raw) document.getElementById('tsInput').value = cleaned;
+
+  const ms = tsInputToMs(cleaned);
+  const resultBox = document.getElementById('tsToDateResult');
+  if(ms == null){
+    resultBox.innerHTML = '<div class="empty-hint">输入时间戳查看转换结果</div>';
+    renderTzTable(null);
+    return;
+  }
+  const d = new Date(ms);
+  if(isNaN(d.getTime())){
+    resultBox.innerHTML = `<div class="err-hint">无效的时间戳</div>`;
+    renderTzTable(null);
+    return;
+  }
+  resultBox.innerHTML = `<div class="human-desc">${esc(fmtInTz(ms, 'Asia/Shanghai'))} 北京时间</div>`;
+  renderTzTable(ms);
+  renderSnippets(Math.round(ms/1000));
+}
+
+function handleDateInput(){
+  const v = document.getElementById('dateInput').value;
+  const resultBox = document.getElementById('dateToTsResult');
+  if(!v){ resultBox.innerHTML = '<div class="empty-hint">选择日期时间查看对应时间戳</div>'; return; }
+  // datetime-local 值按浏览器本地时区解释
+  const d = new Date(v);
+  if(isNaN(d.getTime())){ resultBox.innerHTML = '<div class="err-hint">无效的日期</div>'; return; }
+  const sec = Math.floor(d.getTime()/1000);
+  const ms = d.getTime();
+  resultBox.innerHTML = `
+    <div class="human-desc">${sec} <span style="font-size:12px;font-weight:400;color:var(--tx-m)">秒</span> ／ ${ms} <span style="font-size:12px;font-weight:400;color:var(--tx-m)">毫秒</span></div>
+    <button class="btn-copy" onclick="navigator.clipboard.writeText('${sec}').then(()=>showToast('已复制秒级时间戳'))">复制秒</button>
+    <button class="btn-copy" onclick="navigator.clipboard.writeText('${ms}').then(()=>showToast('已复制毫秒级时间戳'))">复制毫秒</button>
+  `;
+  renderTzTable(ms);
+  renderSnippets(sec);
+}
+
+function copyNowTs(){
+  const sec = Math.floor(Date.now()/1000);
+  navigator.clipboard.writeText(String(sec)).then(()=>showToast('已复制当前时间戳'));
+}
+
+function fillNow(){
+  const sec = Math.floor(Date.now()/1000);
+  curUnit = 's';
+  document.getElementById('unitSec').classList.add('active');
+  document.getElementById('unitMs').classList.remove('active');
+  document.getElementById('tsInput').value = String(sec);
+  handleTsInput();
+  showToast('已填入当前时间戳');
+}
+
+function tickNow(){
+  const sec = Math.floor(Date.now()/1000);
+  document.getElementById('nowTs').textContent = sec;
+  document.getElementById('nowReadable').textContent = fmtInTz(sec*1000, 'Asia/Shanghai') + ' 北京时间';
+}
+
+// ======= 代码片段：动态注入当前时间戳 =======
+const SNIPPET_LANGS = [
+  {key:'js', label:'JavaScript'},
+  {key:'python', label:'Python'},
+  {key:'java', label:'Java'},
+  {key:'go', label:'Go'},
+];
+let curSnippetLang = 'js';
+let curSnippetSec = Math.floor(Date.now()/1000);
+
+function renderSnippetLangs(){
+  document.getElementById('snippetLangs').innerHTML = SNIPPET_LANGS.map(l=>
+    `<button class="snippet-lang-btn ${l.key===curSnippetLang?'active':''}" onclick="setSnippetLang('${l.key}')">${l.label}</button>`
+  ).join('');
+}
+function setSnippetLang(key){
+  curSnippetLang = key;
+  renderSnippetLangs();
+  renderSnippets(curSnippetSec);
+}
+
+function buildSnippet(lang, sec){
+  const kw = s => `<span class="kw">${s}</span>`;
+  const str = s => `<span class="str">${s}</span>`;
+  const nm = s => `<span class="nm">${s}</span>`;
+  if(lang === 'python'){
+    return [
+      `${kw('import')} time`,
+      '',
+      `current_ts = ${nm(sec)}  ${'#'} 秒级时间戳`,
+      `${kw('print')}(time.strftime(${str("'%Y-%m-%d %H:%M:%S'")}, time.localtime(current_ts)))`
+    ].join('\n');
+  }
+  if(lang === 'java'){
+    return [
+      `long currentTs = ${nm(sec)}L${kw(';')} ${'//'} 秒级时间戳`,
+      `Instant instant = Instant.ofEpochSecond(currentTs);`,
+      `System.out.println(instant);`
+    ].join('\n');
+  }
+  if(lang === 'go'){
+    return [
+      `currentTs ${kw(':=')} int64(${nm(sec)}) ${'//'} 秒级时间戳`,
+      `t ${kw(':=')} time.Unix(currentTs, 0)`,
+      `fmt.Println(t.Format(${str('"2006-01-02 15:04:05"')}))`
+    ].join('\n');
+  }
+  // default JS
+  return [
+    `const currentTs = ${nm(sec)}; ${'//'} 秒级时间戳`,
+    `const d = new Date(currentTs * 1000);`,
+    `console.log(d.toLocaleString());`
+  ].join('\n');
+}
+
+function renderSnippets(sec){
+  curSnippetSec = sec;
+  renderSnippetLangs();
+  document.getElementById('snippetBox').innerHTML = buildSnippet(curSnippetLang, sec);
+}
+
+// ===================================================================
+// ======= Tab 2: Cron 解析引擎（时区感知版） =======
+// ===================================================================
+
+const CRON_FIELD_DEFS = [
+  {name:'minute', label:'分', min:0, max:59},
+  {name:'hour', label:'时', min:0, max:23},
+  {name:'day', label:'日', min:1, max:31},
+  {name:'month', label:'月', min:1, max:12},
+  {name:'weekday', label:'周', min:0, max:7},
+];
+
+function parseCronField(expr, def){
+  if(expr === '*'){
+    return { isWildcard: true, test: () => true, values: null };
+  }
+  const allowed = new Set();
+  const parts = expr.split(',');
+  for(let part of parts){
+    let step = 1;
+    let rangePart = part;
+    if(part.includes('/')){
+      const [r, s] = part.split('/');
+      rangePart = r === '' ? '*' : r;
+      step = parseInt(s, 10);
+      if(!Number.isFinite(step) || step <= 0) throw new Error(`非法步长: ${part}`);
+    }
+    let lo, hi;
+    if(rangePart === '*'){
+      lo = def.min; hi = def.max;
+    } else if(rangePart.includes('-')){
+      const [a, b] = rangePart.split('-').map(Number);
+      if(!Number.isFinite(a) || !Number.isFinite(b)) throw new Error(`字段「${def.label}」范围写法不合法: ${part}`);
+      lo = a; hi = b;
+    } else {
+      const v = Number(rangePart);
+      if(!Number.isFinite(v)) throw new Error(`字段「${def.label}」包含非数字: ${part}`);
+      lo = v; hi = v;
+    }
+    if(lo < def.min || hi > def.max || lo > hi) throw new Error(`字段「${def.label}」取值超出合法范围 [${def.min}-${def.max}]: ${part}`);
+    for(let v = lo; v <= hi; v += step){
+      let normalized = v;
+      if(def.name === 'weekday' && v === 7) normalized = 0;
+      allowed.add(normalized);
+    }
+  }
+  return { isWildcard: false, test: (v) => allowed.has(v), values: allowed };
+}
+
+function parseCronExpr(expr){
+  const trimmed = expr.trim().replace(/\s+/g, ' ');
+  if(trimmed === '') throw new Error('请输入 Cron 表达式');
+  const fields = trimmed.split(' ');
+  if(fields.length !== 5){
+    throw new Error(`标准 Cron 表达式需要 5 个字段（分 时 日 月 周），当前检测到 ${fields.length} 个。本工具不支持秒级（Quartz 6位）写法。`);
+  }
+  const parsed = {};
+  CRON_FIELD_DEFS.forEach((def, i) => {
+    parsed[def.name] = parseCronField(fields[i], def);
+  });
+  parsed._rawFields = fields;
+  return parsed;
+}
+
+// 把UTC毫秒时间戳翻译成指定时区下的日历字段（年/月/日/时/分/星期）
+const WD_MAP = {Sun:0,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
+function getZonedFields(utcMs, timeZone){
+  const d = new Date(utcMs);
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone, year:'numeric', month:'2-digit', day:'2-digit',
+    hour:'2-digit', minute:'2-digit', hour12:false, weekday:'short'
+  }).formatToParts(d);
+  const get = t => parts.find(p=>p.type===t)?.value;
+  let hour = get('hour');
+  
+  // 修复漏洞1：解决 Intl 引擎在午夜返回 24 点引发的日期回归级倒退隐患
+  if(hour === '24'){
+    const nextMinFields = getZonedFields(utcMs + 60000, timeZone);
+    nextMinFields.minute = 0; // 强制将次日 00:01 归一化重置为 00:00 
+    return nextMinFields;
+  }
+  
+  return {
+    year: Number(get('year')), month: Number(get('month')), day: Number(get('day')),
+    hour: Number(hour), minute: Number(get('minute')), weekday: WD_MAP[get('weekday')],
+  };
+}
+
+// 关键：DOM 和 DOW 同时显式指定时为 OR 逻辑（Linux crontab 标准行为，与直觉相反）
+function matchesCronFields(parsed, fields){
+  if(!parsed.minute.test(fields.minute)) return false;
+  if(!parsed.hour.test(fields.hour)) return false;
+  if(!parsed.month.test(fields.month)) return false;
+
+  const domWild = parsed.day.isWildcard;
+  const dowWild = parsed.weekday.isWildcard;
+
+  if(domWild && dowWild) return true;
+  if(domWild && !dowWild) return parsed.weekday.test(fields.weekday);
+  if(!domWild && dowWild) return parsed.day.test(fields.day);
+  return parsed.day.test(fields.day) || parsed.weekday.test(fields.weekday); // OR 逻辑
+}
+
+const CRON_MAX_ITERATIONS = 2 * 365 * 24 * 60; // 最多向后找2年，控制最坏情况下的同步阻塞时长
+
+// fromUtcMs: 起始UTC毫秒时刻；timeZone: 该Cron表达式所运行的时区
+function getCronNextRuns(expr, fromUtcMs, count, timeZone){
+  const parsed = parseCronExpr(expr);
+  const results = [];
+  // 游标用UTC毫秒数推进，每次+60秒，完全不依赖浏览器本地时区
+  let cursor = Math.floor(fromUtcMs / 60000) * 60000 + 60000;
+  let iterations = 0;
+  let prevFields = null;
+  
+  while(results.length < count && iterations < CRON_MAX_ITERATIONS){
+    const fields = getZonedFields(cursor, timeZone);
+    
+    // 修复漏洞2：引入名义本地时间差算法，防范夏令时 Spring Forward 跳变引发的任务漏判
+    if(prevFields){
+      const prevNominal = new Date(Date.UTC(prevFields.year, prevFields.month - 1, prevFields.day, prevFields.hour, prevFields.minute));
+      const curNominal = new Date(Date.UTC(fields.year, fields.month - 1, fields.day, fields.hour, fields.minute));
+      const nominalDiffMin = Math.round((curNominal - prevNominal) / 60000);
+      
+      // 当发现本地名义时间跳变间距大于1分钟时，说明由于夏令时前调产生物理空档
+      if(nominalDiffMin > 1){
+        for(let i = 1; i < nominalDiffMin; i++){
+          const skippedNominal = new Date(prevNominal.getTime() + i * 60000);
+          const skippedFields = {
+            year: skippedNominal.getUTCFullYear(),
+            month: skippedNominal.getUTCMonth() + 1,
+            day: skippedNominal.getUTCDate(),
+            hour: skippedNominal.getUTCHours(),
+            minute: skippedNominal.getUTCMinutes(),
+            weekday: skippedNominal.getUTCDay()
+          };
+          // 若被跳过的名义墙上时间命中匹配规则，则在当前跳变边界（cursor 刻度）合并触发
+          if(matchesCronFields(parsed, skippedFields)){
+            if(results.length < count && !results.includes(cursor)){
+              results.push(cursor);
+            }
+          }
+        }
+      }
+    }
+    
+    if(matchesCronFields(parsed, fields)){
+      if(results.length < count && !results.includes(cursor)){
+        results.push(cursor);
+      }
+    }
+    
+    prevFields = fields;
+    cursor += 60000;
+    iterations++;
+  }
+  if(results.length === 0){
+    throw new Error('在未来2年内未找到任何匹配的执行时间，请检查表达式是否存在无法满足的日期组合（例如"2月31日"这类永不存在的日期）');
+  }
+  return results; // UTC毫秒时间戳数组
+}
+
+// ======= 人类可读描述 =======
+const WEEKDAY_NAMES = ['周日','周一','周二','周三','周四','周五','周六'];
+const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+function describeCronField(field, type){
+  if(field.isWildcard) return null;
+  const vals = Array.from(field.values).sort((a,b)=>a-b);
+  if(type === 'weekday') return vals.map(v => WEEKDAY_NAMES[v]).join('、');
+  if(type === 'month') return vals.map(v => MONTH_NAMES[v-1]).join('、');
+  if(type === 'day') return vals.map(v => `${v}日`).join('、');
+  return vals.join(',');
+}
+
+function detectEvenStep(values, max){
+  const sorted = Array.from(values).sort((a,b)=>a-b);
+  if(sorted.length < 2) return null;
+  const step = sorted[1] - sorted[0];
+  if(step <= 0) return null;
+  for(let i=1;i<sorted.length;i++){
+    if(sorted[i] - sorted[i-1] !== step) return null;
+  }
+  if(sorted[0] !== 0) return null;
+  if(sorted[sorted.length-1] + step !== max) return null;
+  return step;
+}
+
+function describeCronTime(parsed){
+  const minWild = parsed.minute.isWildcard;
+  const hourWild = parsed.hour.isWildcard;
+
+  if(minWild && hourWild) return '每分钟';
+
+  if(hourWild && !minWild){
+    const step = detectEvenStep(parsed.minute.values, 60);
+    if(step) return `每${step}分钟`;
+    const m = Array.from(parsed.minute.values).sort((a,b)=>a-b);
+    return `每小时的第 ${m.join('、')} 分`;
+  }
+
+  if(!hourWild && minWild){
+    const h = Array.from(parsed.hour.values).sort((a,b)=>a-b);
+    return `${h.map(x=>String(x).padStart(2,'0')).join('、')} 点每分钟`;
+  }
+
+  const h = Array.from(parsed.hour.values).sort((a,b)=>a-b);
+  const m = Array.from(parsed.minute.values).sort((a,b)=>a-b);
+  if(h.length === 1 && m.length === 1){
+    return `${String(h[0]).padStart(2,'0')}:${String(m[0]).padStart(2,'0')}`;
+  }
+  const hStr = h.map(x=>String(x).padStart(2,'0')).join('、');
+  const mStr = m.map(x=>String(x).padStart(2,'0')).join('、');
+  return `${hStr} 点的第 ${mStr} 分`;
+}
+
+function humanDescribeCron(parsed){
+  const domWild = parsed.day.isWildcard;
+  const monthWild = parsed.month.isWildcard;
+  const dowWild = parsed.weekday.isWildcard;
+
+  const timePart = describeCronTime(parsed);
+
+  let datePart, orNote = null;
+  if(domWild && dowWild){
+    datePart = '每天';
+  } else if(domWild && !dowWild){
+    datePart = describeCronField(parsed.weekday, 'weekday');
+  } else if(!domWild && dowWild){
+    datePart = describeCronField(parsed.day, 'day');
+  } else {
+    const domDesc = describeCronField(parsed.day, 'day');
+    const dowDesc = describeCronField(parsed.weekday, 'weekday');
+    datePart = `${domDesc} 或 ${dowDesc}（满足任一条件即触发）`;
+    orNote = '当前配置下，满足"日期"条件 或 满足"星期"条件，均会触发任务（不要求两者同时成立）。这是 Linux crontab 的标准行为：DOM(日)与DOW(周)同时被指定时为"或"关系，与直觉容易相反，是生产环境配置定时任务时最常见的误判点。';
+  }
+
+  const monthPart = monthWild ? '' : `${describeCronField(parsed.month, 'month')}，`;
+  return { text: `${monthPart}${datePart}，${timePart}执行`, orNote };
+}
+
+// ======= UI: 时区选择器 =======
+const CRON_TZ_OPTIONS = [
+  {tz:'Asia/Shanghai', label:'中国标准时间 (Asia/Shanghai, UTC+8)'},
+  {tz:'UTC', label:'UTC (协调世界时)'},
+  {tz:'Asia/Tokyo', label:'日本标准时间 (Asia/Tokyo, UTC+9)'},
+  {tz:'Asia/Singapore', label:'新加坡时间 (Asia/Singapore, UTC+8)'},
+  {tz:'America/Los_Angeles', label:'美西时间 (America/Los_Angeles)'},
+  {tz:'America/New_York', label:'美东时间 (America/New_York)'},
+  {tz:'Europe/London', label:'伦敦时间 (Europe/London)'},
+];
+let curCronTz = 'Asia/Shanghai';
+
+function renderTzSelector(){
+  const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  let options = CRON_TZ_OPTIONS;
+  if(!options.some(o => o.tz === browserTz)){
+    options = [{tz: browserTz, label: `浏览器检测时区 (${browserTz})`}, ...options];
+  }
+  curCronTz = browserTz && options.some(o=>o.tz===browserTz) ? browserTz : 'Asia/Shanghai';
+
+  const sel = document.getElementById('cronTz');
+  sel.innerHTML = options.map(o => `<option value="${esc(o.tz)}" ${o.tz===curCronTz?'selected':''}>${esc(o.label)}</option>`).join('');
+  document.getElementById('tzAutoHint').textContent = `已根据浏览器自动选择「${browserTz}」作为默认值，如果你的 Cron 实际运行在其他服务器/时区，请在上方手动切换——这会直接影响下方的执行时间预测结果。`;
+
+  sel.addEventListener('change', () => {
+    curCronTz = sel.value;
+    handleCronInput();
+    showToast('已切换运行时区，重新计算执行时间');
+  });
+}
+
+// ======= UI: 字段拆解展示 =======
+function renderCronFieldsDisplay(parsed){
+  const box = document.getElementById('cronFieldsDisplay');
+  if(!parsed){ box.innerHTML = ''; return; }
+  box.innerHTML = CRON_FIELD_DEFS.map((def,i) => `
+    <div class="cron-field">
+      <div class="v">${esc(parsed._rawFields[i])}</div>
+      <div class="lb">${esc(def.label)}</div>
+    </div>
+  `).join('');
+}
+
+// ======= UI: 解析 + 渲染输出 =======
+let lastCronExpr = null;
+
+function handleCronInput(){
+  const raw = document.getElementById('cronInput').value;
+  const errBox = document.getElementById('cronErrHint');
+  const descBox = document.getElementById('humanDescBox');
+
+  let parsed;
+  try{
+    parsed = parseCronExpr(raw);
+  }catch(e){
+    errBox.innerHTML = `<div class="err-hint">${esc(e.message)}</div>`;
+    renderCronFieldsDisplay(null);
+    descBox.innerHTML = '<div class="empty-hint">表达式存在错误，请修正后查看解析结果</div>';
+    document.getElementById('nextRunsBox').innerHTML = '<div class="empty-hint">表达式存在错误</div>';
+    lastCronExpr = null;
+    return;
+  }
+
+  errBox.innerHTML = '';
+  renderCronFieldsDisplay(parsed);
+  lastCronExpr = raw.trim().replace(/\s+/g, ' ');
+
+  const result = humanDescribeCron(parsed);
+  descBox.innerHTML = `
+    <div class="human-desc">${esc(result.text)}<span style="font-size:11px;font-weight:400;color:var(--tx-m)"> （按 ${esc(curCronTz)} 时区）</span></div>
+    ${result.orNote ? `<div class="or-note">⚠ ${esc(result.orNote)}</div>` : ''}
+  `;
+
+  renderNextRuns();
+}
+
+function renderNextRuns(){
+  const box = document.getElementById('nextRunsBox');
+  if(!lastCronExpr){ box.innerHTML = '<div class="empty-hint">解析成功后显示未来执行时间预测</div>'; return; }
+  const n = parseInt(document.getElementById('nextN').value, 10);
+  let runs;
+  try{
+    runs = getCronNextRuns(lastCronExpr, Date.now(), n, curCronTz);
+  }catch(e){
+    box.innerHTML = `<div class="err-hint">${esc(e.message)}</div>`;
+    return;
+  }
+  if(runs.length === 0){
+    box.innerHTML = '<div class="empty-hint">未找到匹配的执行时间</div>';
+    return;
+  }
+  const now = Date.now();
+  box.innerHTML = runs.map((utcMs,i) => {
+    const sec = Math.floor(utcMs/1000);
+    const rel = formatRelative(utcMs - now);
+    const f = getZonedFields(utcMs, curCronTz);
+    const dtStr = `${f.year}-${String(f.month).padStart(2,'0')}-${String(f.day).padStart(2,'0')} ${String(f.hour).padStart(2,'0')}:${String(f.minute).padStart(2,'0')} (${WEEKDAY_NAMES[f.weekday]})`;
+    return `<div class="run-item" onclick="jumpToTimestamp(${sec})" title="点击在时间戳互转中查看">
+      <span class="idx">#${i+1}</span>
+      <span class="dt">${esc(dtStr)}</span>
+      <span class="rel">${esc(rel)}</span>
+    </div>`;
+  }).join('');
+}
+
+function formatRelative(diffMs){
+  const sec = Math.floor(diffMs/1000);
+  const min = Math.floor(sec/60);
+  const hour = Math.floor(min/60);
+  const day = Math.floor(hour/24);
+  if(day > 0) return `${day}天后`;
+  if(hour > 0) return `${hour}小时后`;
+  if(min > 0) return `${min}分钟后`;
+  return '即将';
+}
+
+function jumpToTimestamp(sec){
+  switchTab('ts');
+  curUnit = 's';
+  document.getElementById('unitSec').classList.add('active');
+  document.getElementById('unitMs').classList.remove('active');
+  document.getElementById('tsInput').value = String(sec);
+  handleTsInput();
+  showToast('已跳转并填入该执行时间的时间戳');
+}
+
+// ===================================================================
+// ======= 引导式表单（互斥置灰，不依赖AI） =======
+// ===================================================================
+
+const FREQ_OPTIONS = [
+  {key:'daily', label:'每天'},
+  {key:'weekly', label:'每周'},
+  {key:'monthly', label:'每月'},
+];
+let curFreq = 'daily';
+
+function renderFreqRow(){
+  document.getElementById('freqRow').innerHTML = FREQ_OPTIONS.map(f =>
+    `<button class="freq-btn ${f.key===curFreq?'active':''}" onclick="setFreq('${f.key}')">${f.label}</button>`
+  ).join('');
+}
+
+function setFreq(key){
+  curFreq = key;
+  renderFreqRow();
+  renderBuilderFields();
+}
+
+function renderBuilderFields(){
+  const box = document.getElementById('builderFields');
+  let html = `
+    <div class="builder-row">
+      <div class="builder-grp">
+        <label>时</label>
+        <select id="bHour">${Array.from({length:24},(_, i)=>`<option value="${i}" ${i===2?'selected':''}>${String(i).padStart(2,'0')}</option>`).join('')}</select>
+      </div>
+      <div class="builder-grp">
+        <label>分</label>
+        <select id="bMinute">${Array.from({length:60},(_, i)=>`<option value="${i}" ${i===0?'selected':''}>${String(i).padStart(2,'0')}</option>`).join('')}</select>
+      </div>
+    </div>
+  `;
+
+  if(curFreq === 'weekly'){
+    html += `
+      <div class="builder-row">
+        <div class="builder-grp" style="flex:1 1 100%">
+          <label>星期（可多选）</label>
+          <select id="bWeekday" multiple style="height:90px">
+            ${WEEKDAY_NAMES.map((n,i) => `<option value="${i}" ${i>=1&&i<=5?'selected':''}>${n}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="dim-note">已选「每周」：日(DOM)字段将固定为 *，避免与周字段产生 OR 逻辑歧义</div>
+    `;
+  } else if(curFreq === 'monthly'){
+    html += `
+      <div class="builder-row">
+        <div class="builder-grp">
+          <label>每月第几日</label>
+          <select id="bDay">${Array.from({length:31},(_, i)=>`<option value="${i+1}" ${i+1===1?'selected':''}>${i+1}日</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="dim-note">已选「每月」：周(DOW)字段将固定为 *，避免与日字段产生 OR 逻辑歧义</div>
+    `;
+  } else {
+    html += `<div class="dim-note">已选「每天」：日(DOM)与周(DOW)字段都固定为 *</div>`;
+  }
+  box.innerHTML = html;
+}
+
+function applyBuilder(){
+  const hour = document.getElementById('bHour').value;
+  const minute = document.getElementById('bMinute').value;
+  let day = '*', month = '*', weekday = '*';
+
+  if(curFreq === 'weekly'){
+    const sel = Array.from(document.getElementById('bWeekday').selectedOptions).map(o=>o.value);
+    if(sel.length === 0){ showToast('请至少选择一个星期'); return; }
+    weekday = sel.join(',');
+    day = '*';
+  } else if(curFreq === 'monthly'){
+    day = document.getElementById('bDay').value;
+    weekday = '*';
+  }
+
+  const expr = `${minute} ${hour} ${day} ${month} ${weekday}`;
+  document.getElementById('cronInput').value = expr;
+  handleCronInput();
+  showToast('已生成表达式');
+}
+
+// ===================================================================
+// ======= Init =======
+// ===================================================================
+function init(){
+  initTheme();
+
+  // Tab1 events
+  document.getElementById('tsInput').addEventListener('input', debounce(handleTsInput, 100));
+  document.getElementById('dateInput').addEventListener('input', debounce(handleDateInput, 100));
+  tickNow();
+  setInterval(tickNow, 1000);
+  renderSnippets(Math.floor(Date.now()/1000));
+
+  // Tab2 events
+  renderTzSelector();
+  document.getElementById('cronInput').addEventListener('input', debounce(handleCronInput, 150));
+  renderFreqRow();
+  renderBuilderFields();
+  handleCronInput(); 
+}
+init();
+
+</script>
+</body>
+</html>
